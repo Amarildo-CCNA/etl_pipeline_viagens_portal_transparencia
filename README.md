@@ -53,20 +53,19 @@ Além das chaves primárias (PK) e estrangeiras (FK), cada tabela Silver possui 
 
 O script `1_extrair.py` automatiza toda a ingestão dos dados brutos, sem qualquer intervenção manual:
 
-- **Download automatizado:** o arquivo `.zip` é baixado diretamente do Google Drive a partir do `DRIVE_FILE_ID` configurado no `.env`.
+- **Download automatizado:** o arquivo `.zip` é baixado diretamente do Google Drive a partir do `DRIVE_FILE_ID` configurado no `config.py`.
 - **Leitura em blocos (chunks):** os 4 CSVs (`2025_Viagem`, `2025_Pagamento`, `2025_Passagem`, `2025_Trecho`) são lidos em blocos com Pandas, evitando
   sobrecarga de memória mesmo com arquivos grandes.
 - **Preservação fiel dos dados:** todas as colunas são carregadas como `VARCHAR`, sem nenhuma conversão de tipo ou limpeza — mantendo separador `;`, encoding `latin-1`, vírgula como decimal e datas no formato `DD/MM/AAAA` exatamente como publicados, garantindo rastreabilidade e auditoria de qualquer transformação futura.
 - **Idempotência:** antes de cada carga, as tabelas Raw passam por `TRUNCATE`, garantindo que reexecuções do pipeline não dupliquem registros.
-- **Resiliência:** todo o processo de download e carga é envolto em blocos `try/except`, tratando falhas de conexão ou leitura sem interromper
-  silenciosamente o pipeline.
+- **Resiliência:** todo o processo de download e carga é envolto em blocos `try/except`, tratando falhas de conexão ou leitura, silenciosamente, sem interromper o pipeline.
 - O resultado são as 4 tabelas Raw (**`raw_viagem`**, **`raw_pagamento`**, **`raw_passagem`**, **`raw_trecho`**) — uma cópia fiel e auditável da fonte oficial,
   que serve de base para a limpeza e tipagem feitas na camada Silver.
 
 ### 🛠️ Ajuste Realizado no `config.py` Fornecido
 
 > **Nota sobre o `config.py`:** o arquivo de configuração fornecido foi estendido com o dicionário `COLUNAS_RAW`, que traduz os cabeçalhos originais
-> do CSV (com espaços e acentos, ex.: `"Identificador do processo de viagem"`) para nomes de coluna válidos em SQL. Essa extensão foi necessária para atender ao item 5.4 do desafio, que exige a replicação fiel do CSV inteiro na camada Raw — incluindo colunas não usadas na Silver, como `cpf_viajante`, `funcao` e os campos de volta da passagem. Também foram adicionadas as constantes `RAW_SCHEMA` e `SILVER_SCHEMA`, ambas apontando para `public`, padronizando o schema utilizado pelas camadas. Nenhuma configuração original foi removida ou modificada — a alteração é estritamente aditiva.
+> do CSV (com espaços e acentos, ex.: `"Identificador do processo de viagem"`) para nomes de coluna válidos em SQL. Essa extensão foi necessária para atender ao item 5.4 do desafio, que exige a replicação fiel do CSV inteiro na camada Raw, incluindo colunas não usadas na Silver, como `cpf_viajante`, `funcao` e os campos de volta da passagem. Também foram adicionadas as constantes `RAW_SCHEMA` e `SILVER_SCHEMA`, ambas apontando para `public`, padronizando o schema utilizado pelas camadas. Nenhuma configuração original foi removida ou modificada. A alteração é estritamente aditiva.
 
 ## 📊 Estrutura dos Dados na Camada Gold
 
@@ -140,13 +139,13 @@ Identifica quais ministérios e autarquias demandam o maior orçamento para desl
 
 Utilizando técnicas de split de texto (`SPLIT_PART`), foram limpos os históricos de escalas para isolar o destino principal.
 
-Isso revelou localidades com maiores custos médios de diárias fora do eixo administrativo comum de Brasília.
+Isso revelou localidades com maior custo médio de diárias fora do eixo administrativo comum de Brasília.
 
 ![3 destinos com maior custo médio por viagem](imagens/Gráfico_2_destinos_maior_custo_medio.png)
 
 ### 3. Viagem de Maior Duração e Seu Custo Total (Análise de Outliers)
 
-Localizou de forma precisa uma viagem atípica de **378 dias**, cujo custo totalizado foi de **R$ 120.650,00**.
+Localizou de forma precisa uma viagem atípica de **378 dias**, cujo custo totalizou o valor de **R$ 120.650,00**.
 
 O valor se mostrou proporcional ao período (cerca de **R$ 319,18 por dia**), demonstrando a capacidade do pipeline de isolar missões contínuas no exterior ou de longo prazo sem distorcer as médias gerais.
 

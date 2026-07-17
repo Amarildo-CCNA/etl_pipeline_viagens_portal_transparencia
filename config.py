@@ -43,7 +43,7 @@ POSTGRES_CONFIG = {
     "port": int(os.environ.get("POSTGRES_PORT", "5432")),
     "user": os.environ.get("POSTGRES_USER", "postgres"),
     "password": os.environ.get("POSTGRES_PASSWORD", ""),
-    "dbname": os.environ.get("POSTGRES_DATABASE", "provisorio"),
+    "dbname": os.environ.get("POSTGRES_DATABASE", "transparencia"),
 }
 
 
